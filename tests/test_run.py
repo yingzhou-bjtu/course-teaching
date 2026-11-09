@@ -30,6 +30,13 @@ class RunScript(unittest.TestCase):
         message = (proc.stdout or "") + (proc.stderr or "")
         self.assertEqual(proc.returncode, 0, message)
         self.assertIn("运行结束", proc.stdout or "")
+        try:
+            import matplotlib  # noqa: F401
+        except ImportError:
+            return
+        figures = os.path.join(ROOT, "figures")
+        self.assertTrue(os.path.isdir(figures), "没有生成 figures/ 目录")
+        self.assertGreaterEqual(len(os.listdir(figures)), 5, "教学图不足五张")
 
     def test_lite_version_runs_with_stdlib_only(self):
         proc = subprocess.run(
@@ -40,6 +47,13 @@ class RunScript(unittest.TestCase):
         message = (proc.stdout or "") + (proc.stderr or "")
         self.assertEqual(proc.returncode, 0, message)
         self.assertIn("运行结束", proc.stdout or "")
+        try:
+            import matplotlib  # noqa: F401
+        except ImportError:
+            return
+        figures = os.path.join(ROOT, "figures")
+        self.assertTrue(os.path.isdir(figures), "没有生成 figures/ 目录")
+        self.assertGreaterEqual(len(os.listdir(figures)), 5, "教学图不足五张")
         self.assertNotIn("numpy", (proc.stderr or "").lower())
 
     def test_missing_notebook_message(self):

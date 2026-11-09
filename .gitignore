@@ -5,7 +5,15 @@ dist/
 .venv/
 venv/
 *.part
-data/
+
+# 自己的照片放这里，默认不上传；仓库预置的样板图例外。
+data/*
+!data/sample/
+!data/sample/**
+
+# 运行时装出来的教学图，不必提交
+figures/
+
 .ipynb_checkpoints/
 .DS_Store
 Thumbs.db

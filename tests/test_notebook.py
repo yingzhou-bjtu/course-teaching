@@ -70,6 +70,26 @@ class NotebookRun(unittest.TestCase):
         self.assertIn("最大相对误差", self.out)
         self.assertIn("误差与解析梯度同量级", self.out)
 
+    def test_sample_images_come_from_disk(self):
+        # 仓库预置了 data/sample，装了 Pillow 就必须从磁盘读回来
+        try:
+            import PIL  # noqa: F401
+        except ImportError:
+            raise unittest.SkipTest("没装 Pillow，样板图走程序现画的分支")
+        self.assertIn("data/sample（从磁盘读取）", self.out)
+        self.assertEqual(self.ns["X_snap"].shape[1:], (3, 96, 96))
+
+    def test_figures_written(self):
+        try:
+            import matplotlib  # noqa: F401
+        except ImportError:
+            raise unittest.SkipTest("没装 matplotlib，不产出教学图")
+        figures = os.path.join(ROOT, "figures")
+        for name in ("01_samples", "02_conv_kernels", "03_training_curves",
+                     "04_confusion_matrix", "05_predictions"):
+            path = os.path.join(figures, name + ".png")
+            self.assertTrue(os.path.exists(path) and os.path.getsize(path) > 1000, path)
+
     def test_offline_and_dependency_light(self):
         # 课程承诺：不下载数据、不联网
         self.assertNotIn("http://", self.source)

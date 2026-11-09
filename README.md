@@ -45,6 +45,7 @@ Windows 上多数情况下命令是 `python run.py`。哪个能跑通用哪个�
 ```
 Python: 3.10.12 | NumPy: 1.26.4
 数据模式: toy | 尺寸: 32x32
+照片目录: data/sample | 教学图目录: figures
 训练集 X: (2000, 3, 32, 32)  y: (2000,)
 验证集 X: (600, 3, 32, 32)  y: (600,)
 ...
@@ -52,6 +53,12 @@ Python: 3.10.12 | NumPy: 1.26.4
 最大相对误差 2.76e-03
 epoch  1/4  loss 0.0939  训练 1.000  验证 1.000  (2.6s)
 epoch  4/4  loss 0.0000  训练 1.000  验证 1.000  (3.2s)
+照片: (16, 3, 96, 96) 来源: data/sample（从磁盘读取）
+教学图已保存: figures/01_samples.png
+教学图已保存: figures/02_conv_kernels.png
+教学图已保存: figures/03_training_curves.png
+教学图已保存: figures/04_confusion_matrix.png
+教学图已保存: figures/05_predictions.png
 总训练时间 11.1 秒
 验证集准确率: 1.0000  (600/600)
 混淆矩阵（行=真实，列=预测）
@@ -150,6 +157,40 @@ python3 -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple matplotlib
 
 每个代码格子开头都有中文注释，说明这一格在做什么。参数集中在第一个单元格，改完重跑即可。
 
+## 预置的真实照片与教学图
+
+仓库里放了 16 张真实照片，猫狗各 8 张，都是 160x160 的 JPEG：
+
+```
+data/sample/cat/cat_00.jpg ... cat_07.jpg
+data/sample/dog/dog_00.jpg ... dog_07.jpg
+```
+
+挑这 16 张不是为了好看，是为了让“同一类东西长得能差多远”具体可见：
+
+- **毛色和纹理**：全黑侧脸、黑白花、橘色虎斑、三花、黑色卷毛、哈士奇脸纹
+- **姿态**：蜷成一团睡觉、跑起来拉长、只剩一个脑袋的特写
+- **光照**：夜里曝光不足、雪地背景和毛色几乎一样白、逆光
+- **构图与干扰**：背景里多一只蜥蜴、两只挤在一格、远处只剩几十像素
+
+每张的照片来源、作者、许可以及它想体现的特性，都写在 `data/sample/README.md` 里。图片来自 Wikimedia Commons，选的是公共领域或 CC 授权，压缩后总共约 110 KB。
+
+课程第 1 步会把这些照片从磁盘读回来，显示成 `figures/01_samples.png` 那张网格图，标题上写着 `samples from data/sample`。训练用的两千张仍然是程序画的，所以第一次运行不用联网、不用下载数据集；这 16 张的作用是让你看见真实照片有多“不规整”。
+
+想换掉其中某张：同名覆盖即可，代码不用改。`tests/test_sample_data.py` 会检查文件、尺寸，以及许可表是否和文件名一一对应。
+
+运行结束后，`figures/` 里会有五张教学图，可以直接拿去上课或交作业：
+
+| 文件 | 内容 |
+|---|---|
+| `01_samples.png` | 16 张真实照片，两行八列 |
+| `02_conv_kernels.png` | 同一张图被竖直边缘、水平边缘、模糊三种卷积核扫过 |
+| `03_training_curves.png` | 损失下降曲线 + 训练/验证准确率差距 |
+| `04_confusion_matrix.png` | 混淆矩阵热力图 |
+| `05_predictions.png` | 九张验证图的预测结果，对错标红绿 |
+
+`figures/` 里是运行产物，已经写进 `.gitignore`，不会提交。示例图用的是英文标注，避免缺中文字体。
+
 ## 用真实的猫狗照片
 
 把第一个单元格的 `DATA_MODE` 改成 `folder`，照片按下面的结构放：
@@ -202,6 +243,8 @@ course-teaching/
 ├── run.py                 # 不用 Jupyter 的运行入口
 ├── run_lite.py            # 纯 Python 精简版，零依赖
 ├── requirements.txt       # numpy（matplotlib、pillow 可选）
+├── data/sample/           # 16 张真实照片：猫狗各 8 张 160x160 JPEG
+├── figures/               # 运行生成的教学图（不提交）
 ├── vendor/                # 离线 wheel 存放处，默认空
 ├── ghfast/
 │   ├── ghfast.py          # GitHub 加速与诊断

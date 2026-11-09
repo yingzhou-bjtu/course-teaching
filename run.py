@@ -42,6 +42,9 @@ def run_notebook(fast):
     namespace = {"__name__": "__main__"}
     exec(compile(source, NB, "exec"), namespace)
     acc = namespace.get("val_acc")
+    figures = os.path.join(HERE, "figures")
+    if os.path.isdir(figures) and os.listdir(figures):
+        print("教学图已存到 figures/ 目录（共 %d 张）" % len(os.listdir(figures)))
     print("=" * 60)
     print("运行结束，验证集准确率 %.4f" % acc if acc is not None else "运行结束")
     print("=" * 60)
