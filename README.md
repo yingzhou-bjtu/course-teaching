@@ -1,123 +1,246 @@
 # 课程教学
 
-仓库包含两部分：一份讲原理的教学 notebook，一个网络不通时可用的小工具。
+用 NumPy 从零实现一个卷积网络，做猫狗图片分类。不用框架，不下载数据，装了 Python 就能跑。
 
-第一次使用请直接看 [开始使用.md](开始使用.md)：只有一个命令 `python3 run.py`。不需要 GitHub 账号，不需要下载数据，也不需要 Jupyter。没装 numpy 时程序自动改用纯 Python 精简版。
+- 想马上跑起来：[开始使用.md](开始使用.md)
+- 想看每一步在算什么：打开 [`猫狗识别.ipynb`](猫狗识别.ipynb)
+- 没有 Jupyter：`python3 run.py`
 
-| 路径 | 内容 | 依赖 |
+## 五分钟跑起来
+
+### 第一步，拿到文件
+
+直接下载压缩包：
+
+```
+https://github.com/yingzhou-bjtu/course-teaching/archive/refs/heads/main.zip
+```
+
+也可以在仓库页面点 `Code` → `Download ZIP`。解压得到一个文件夹。如果拿到的是别人给的压缩包，直接解压即可。
+
+### 第二步，进入这个文件夹
+
+打开终端，切到刚解压的目录：
+
+```bash
+cd 下载路径/course-teaching-main
+```
+
+Windows 用 PowerShell 或命令提示符，路径里有空格时整个路径加引号。
+
+### 第三步，运行
+
+```bash
+python3 run.py
+```
+
+Windows 上多数情况下命令是 `python run.py`。哪个能跑通用哪个，后面都同一个规则。
+
+十几秒后结束，最后一行打印验证集准确率。
+
+## 你会看到什么
+
+真实输出，节选：
+
+```
+Python: 3.10.12 | NumPy: 1.26.4
+数据模式: toy | 尺寸: 32x32
+训练集 X: (2000, 3, 32, 32)  y: (2000,)
+验证集 X: (600, 3, 32, 32)  y: (600,)
+...
+参数总量：132850（约 13.3 万）
+最大相对误差 2.76e-03
+epoch  1/4  loss 0.0939  训练 1.000  验证 1.000  (2.6s)
+epoch  4/4  loss 0.0000  训练 1.000  验证 1.000  (3.2s)
+总训练时间 11.1 秒
+验证集准确率: 1.0000  (600/600)
+混淆矩阵（行=真实，列=预测）
+          预测猫  预测狗
+真实猫      300       0
+真实狗        0     300
+运行结束，验证集准确率 1.0000
+```
+
+三行关键数字的含义：
+
+（1）`训练集 X: (2000, 3, 32, 32)` 表示两千张 32x32 的彩色图，通道在前。
+
+（2）`最大相对误差` 是梯度检验的结果，千分之一量级说明反向传播写对了。
+
+（3）`验证集准确率` 是六百张没参与训练的图上算出来的。
+
+准确率到 100% 不是造假。样本由程序生成，两类差异明显，网络几十步就分开了。换成真实照片会明显下降，原因在第 7 步解释。
+
+## 两种运行模式
+
+程序会自己选，你不用管。
+
+| | 完整模式 | 精简模式 |
 |---|---|---|
-| [`开始使用.md`](开始使用.md) | 新手入口，三步跑起来，含国内源与离线安装办法 | 无 |
-| [`猫狗识别.ipynb`](猫狗识别.ipynb) | 主线课程，用 NumPy 从零实现卷积网络做猫狗分类 | 仅 `numpy` |
-| [`run.py`](run.py) | 不用 Jupyter 的运行入口，缺 numpy 时自动切精简版 | 无 |
-| [`run_lite.py`](run_lite.py) | 纯 Python 精简版，零第三方依赖 | 无 |
-| [`ghfast/`](ghfast/) | 不开 VPN 访问 GitHub 的工具，下载依赖时使用 | 仅 Python 标准库 |
-| [`tests/`](tests/) | 自动化测试，含 notebook 的端到端执行 | `numpy` |
+| 前提 | 装了 numpy | 只装 Python，什么都不用装 |
+| 输入 | 32x32 彩色图 | 16x16 灰度图 |
+| 参数 | 132850 | 666 |
+| 耗时 | 本机约 13 秒，慢一些的二三十秒 | 1 秒内 |
+| 跑法 | `python3 run.py` | `python3 run.py`（自动） |
 
-## 一、主线课程
+只想确认环境通不通，用：
 
-### 设计取舍
+```bash
+python3 run.py --fast
+```
 
-现有教学多先讲网络结构，再调用框架接口。学习者看到损失下降，却看不到损失为何下降，出错时也难定位。本课程把卷积、池化、交叉熵与优化器逐层写成函数，中间量可打印，形状与梯度可逐层核对。
+一秒多结束，准确率八成左右，因为只训练一个 epoch。
 
-| | 本课程 | 框架方案 |
+## 常见问题
+
+**提示 `python3: command not found` 或 `不是内部或外部命令`**
+
+Windows 上一般是 `python run.py`。如果 `python` 和 `python3` 都没有，说明 Python 没装好，去 python.org 装一个，安装时勾选 `Add Python to PATH`。
+
+**提示 `No module named 'numpy'`**
+
+不影响运行，程序会自动切到精简模式。想要完整模式，用国内镜像装一次：
+
+```bash
+python3 -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple numpy
+```
+
+**提示 `No module named pip`**
+
+先用精简模式跑，`python3 run.py` 一样出结果。要装 numpy 再执行 `python3 -m ensurepip --upgrade`。
+
+**服务器不能联网**
+
+在任意一台能上网的电脑上执行下面这条，把生成的 `vendor` 目录拷到服务器，再执行第二条：
+
+```bash
+python3 -m pip download numpy -d vendor --only-binary=:all: -i https://pypi.tuna.tsinghua.edu.cn/simple
+python3 -m pip install --no-index --find-links vendor numpy
+```
+
+**Windows 控制台中文乱码**
+
+程序已经把输出切到 UTF-8。仍然乱码时，在命令提示符里先执行 `chcp 65001`。
+
+**运行太慢**
+
+用 `python3 run.py --fast`。或者在第一个单元格把 `FAST_DEMO` 改成 `True`，样本降到 64 张。
+
+**想看训练曲线**
+
+```bash
+python3 -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple matplotlib
+```
+
+装完重跑 `python3 run.py`，会多出两张图。图注是英文，避免机器缺中文字体显示成方块。不装也能跑完，只是没有图。
+
+## notebook 里有什么
+
+| 步骤 | 你会做什么 | 跑完看到什么 |
 |---|---|---|
-| 依赖 | NumPy；无 NumPy 时自动用纯 Python 精简版 | 框架轮子数百 MB |
-| 首次运行 | 无需下载数据 | 需要数据集与依赖 |
-| 训练耗时 | CPU 十余秒 | 通常需要 GPU |
-| 教学重点 | 计算过程 | 端到端流程 |
+| 0 | 检查版本，设定参数 | Python 与 numpy 版本号 |
+| 1 | 生成两千张猫狗样本 | 形状、像素范围、耗时 |
+| 2 | 标准化、打乱 | 标准化后的数值范围 |
+| 3 | 手算一次卷积，再看固定核扫过一张图 | 特征图，边缘被点亮 |
+| 4 | 实现 im2col、卷积、池化、交叉熵、Adam | 每层的输出形状与数值 |
+| 5 | 搭网络，做梯度检验 | 数值梯度与解析梯度的相对误差 |
+| 6 | 训练 | 每个 epoch 的损失与准确率 |
+| 7 | 评估 | 混淆矩阵、九个预测样本 |
+| 8 | 数据增强对比 | 两次训练的准确率 |
 
-### 课程结构
+每个代码格子开头都有中文注释，说明这一格在做什么。参数集中在第一个单元格，改完重跑即可。
 
-| 步骤 | 内容 |
-|---|---|
-| 0 | 检查环境，确认版本与中文字体 |
-| 1 | 构造函数生成猫狗样本，或读取本地照片目录 |
-| 2 | 标准化与打乱，确认张量形状 |
-| 3 | 手算一次卷积，观察边缘响应 |
-| 4 | 实现 im2col 卷积、最大池化、softmax 交叉熵与 Adam |
-| 5 | 搭建约十三万参数的小网络，做数值梯度检验 |
-| 6 | 训练并记录损失与准确率 |
-| 7 | 评估，查看混淆矩阵与错例 |
-| 8 | 数据增强对比实验 |
-| 附 | 思考题与改用框架的时机 |
+## 用真实的猫狗照片
 
-### 运行方式
+把第一个单元格的 `DATA_MODE` 改成 `folder`，照片按下面的结构放：
 
-```bash
-pip install numpy              # 唯一必需项
-pip install matplotlib         # 可选，用于绘制训练曲线
-jupyter notebook 猫狗识别.ipynb
+```
+data/cats_dogs/cat/001.jpg
+data/cats_dogs/cat/002.jpg
+...
+data/cats_dogs/dog/001.jpg
+...
 ```
 
-没有 Jupyter 时用同一个文件夹里的 `run.py`，它会把课程代码完整执行一遍：
+要求：
 
-```bash
-python3 run.py          # 正常跑，十余秒
-python3 run.py --fast   # 两秒跑完，用于确认环境
-```
+（1）每类建议一百张以上。样本太少时准确率不稳定，也更难看出过拟合。
 
-没有 numpy 也能跑，程序会自动改用 `run_lite.py`：16x16 灰度图、六百多个参数的同类网络，一秒内结束。
+（2）jpg、png 都行，尺寸不限，程序会统一缩放到 32x32。
 
-numpy 的安装优先用国内镜像，命令见 [开始使用.md](开始使用.md)。服务器不能联网时，在一台能上网的机器上执行 `pip download numpy -d vendor`，把 `vendor` 目录拷过去，再用 `pip install --no-index --find-links vendor numpy` 安装。
+（3）读取照片需要 Pillow：`python3 -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple pillow`。
 
-默认配置为每类一千张样本、四个 epoch，普通笔记本 CPU 上十余秒即可跑完；把第一个单元格的 `FAST_DEMO` 改为 `True` 可压到两秒以内，用于确认环境。
+（4）真实照片的准确率明显低于合成数据，这是正常的，正是这门课要讲的重点。
 
-### 数据来源
+## 学完可以做什么
 
-默认由程序生成两类头像样本，无需下载，也不依赖外部数据。若已有真实的猫狗照片，将 `DATA_MODE` 改为 `folder`，按 `data/cats_dogs/cat/*.jpg` 与 `data/cats_dogs/dog/*.jpg` 放置即可，读取时需要 Pillow。
+（1）把输出层从 2 改成 10，换十个类别，看准确率怎么变。
 
-### 前置知识
+（2）把网络加深一层，观察训练时间和准确率的变化。
 
-Python 基础语法与矩阵乘法的含义即可。反向传播的推导在使用处解释，不要求预先掌握微积分。
+（3）同样的网络用框架写一遍，大约三十行，对比代码量和训练速度，就知道框架替你做了什么。
 
-## 二、ghfast
+（4）觉得手写太慢，说明该换框架了；觉得看不懂框架在干什么，回到这里再看一遍。
 
-课程中下载依赖常卡在 GitHub 上，`ghfast` 用于诊断与绕行：
+## 环境要求
 
-```bash
-python ghfast/ghfast.py doctor      # 检查卡在 DNS、TLS 还是线路
-python ghfast/ghfast.py mirrors     # 查看当前可用镜像
-python ghfast/ghfast.py download <url> -O out.bin
-```
-
-零第三方依赖，Windows、macOS、Linux 通用，详见 [ghfast/README.md](ghfast/README.md)。
+| | 要求 | 说明 |
+|---|---|---|
+| Python | 3.8 以上 | 3.8、3.10、3.12 在 CI 上实测 |
+| NumPy | 1.21 以上 | 完整模式需要，精简模式不需要 |
+| Matplotlib | 3.5 以上 | 可选，画训练曲线 |
+| Pillow | 9.0 以上 | 可选，读真实照片 |
+| 系统 | Windows、macOS、Linux | 三系统都有 CI |
+| 显卡 | 不需要 | 纯 CPU，十余秒 |
 
 ## 目录结构
 
 ```
 course-teaching/
-├── 开始使用.md               # 新手入口
-├── 猫狗识别.ipynb            # 主线课程
-├── run.py                    # 不用 Jupyter 的运行入口
-├── run_lite.py               # 纯 Python 精简版，零依赖
-├── requirements.txt          # numpy（matplotlib、pillow 可选）
-├── vendor/                   # 离线 wheel 存放处（默认空）
-├── ghfast/                   # GitHub 加速工具
-│   ├── ghfast.py
-│   ├── build.py              # 打包 dist/ghfast.pyz
-│   ├── install.sh / install.ps1
+├── 开始使用.md            # 新手入口，三五句话说完
+├── 猫狗识别.ipynb         # 主线课程，八个步骤
+├── run.py                 # 不用 Jupyter 的运行入口
+├── run_lite.py            # 纯 Python 精简版，零依赖
+├── requirements.txt       # numpy（matplotlib、pillow 可选）
+├── vendor/                # 离线 wheel 存放处，默认空
+├── ghfast/
+│   ├── ghfast.py          # GitHub 加速与诊断
+│   ├── build.py           # 打包成单文件 ghfast.pyz
+│   ├── install.sh
+│   ├── install.ps1
 │   ├── launchers/
 │   ├── vendor/
 │   └── README.md
 ├── tests/
-│   ├── test_ghfast.py        # 30 个单元测试
-│   └── test_notebook.py      # 端到端执行 notebook
+│   ├── test_notebook.py   # 端到端执行 notebook
+│   ├── test_run.py        # 两个入口的冒烟测试
+│   └── test_ghfast.py     # ghfast 三十项单元测试
 └── .github/workflows/ci.yml
 ```
 
-## 环境要求
+## 二、ghfast
 
-| | 版本 | 说明 |
-|---|---|---|
-| Python | 3.8+ | notebook 与工具兼容 |
-| NumPy | 1.21+ | 唯一硬依赖 |
-| Matplotlib | 3.5+ | 可选，绘图 |
-| Pillow | 9.0+ | 可选，读取本地照片 |
-| 操作系统 | Windows、macOS、Linux | CI 三系统均测 |
+只有一种情况用得上：要装包、要下载仓库，但 GitHub 连不上。平时跑课程不需要它。
 
-## CI
+```bash
+python3 ghfast/ghfast.py doctor --timeout 1   # 判断卡在 DNS、TLS 还是线路，约一分半
+python3 ghfast/ghfast.py mirrors --timeout 1  # 查看当前可用镜像，约半分钟
+python3 ghfast/ghfast.py download <url> -O out.bin
+```
 
-每次 push 与 PR 在 Windows、macOS、Ubuntu 与 Python 3.8、3.10、3.12 的组合上运行：单元测试、ghfast 自检、zipapp 打包，以及 notebook 的完整执行。
+`doctor` 要逐个探测十几个域名，默认每个等六秒，网络差时可能要好几分钟，加上 `--timeout 1` 快很多。
+
+只用 Python 标准库，三个系统通用，详见 [ghfast/README.md](ghfast/README.md)。
+
+## 测试与 CI
+
+自己验证一遍：
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+每次 push 会在 Windows、macOS、Linux 与 Python 3.8、3.10、3.12 的组合上跑：单元测试、两个运行入口、ghfast 自检、打包，以及 notebook 的完整执行。
 
 ## License
 
