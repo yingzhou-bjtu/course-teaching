@@ -56,7 +56,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 UA = "ghfast/%s (+python-stdlib)" % VERSION
 
 HOSTS_BEGIN = "# >>> ghfast managed block >>>"
@@ -648,6 +648,24 @@ def download_candidates(url: str, mirrors: Optional[Sequence[MirrorProbe]] = Non
     return _dedup(out)
 
 
+def _looks_like_proxy_error(url: str, content_type: Optional[str], body: bytes) -> bool:
+    """镜像/反代会把错误页以 200 返回（content-type: text/html）。
+
+    只要目标不是 HTML 文件、而响应声称是 HTML 且正文像 HTML，就当失败处理，
+    让调用方换下一个候选。这是实测踩到的坑：新仓库在 jsDelivr 尚未索引时
+    会返回 HTML 错误页，如果只看状态码就会把错误页当文件存下来。
+    """
+    if not body:
+        return False
+    path = urllib.parse.urlsplit(url).path.lower()
+    if path.endswith((".html", ".htm", ".xhtml")):
+        return False
+    if "text/html" not in (content_type or "").lower():
+        return False
+    head = body.lstrip()[:64].lower()
+    return head.startswith(b"<!doctype html") or head.startswith(b"<html")
+
+
 def probe_download(url: str, timeout: float = 8.0, max_bytes: int = 1024) -> Optional[Tuple[str, Optional[float], Optional[int]]]:
     """返回 (url, 首字节耗时ms, 总大小) 或 None。"""
     req = urllib.request.Request(url, headers={"User-Agent": UA, "Range": "bytes=0-%d" % (max_bytes - 1)})
@@ -656,6 +674,8 @@ def probe_download(url: str, timeout: float = 8.0, max_bytes: int = 1024) -> Opt
         with urllib.request.urlopen(req, timeout=timeout, context=_CTX) as r:
             body = r.read(max_bytes)
             if not body:
+                return None
+            if _looks_like_proxy_error(url, r.headers.get("Content-Type"), body):
                 return None
             total = r.headers.get("Content-Range", "").rsplit("/", 1)[-1]
             size = int(total) if total.isdigit() else None
@@ -695,9 +715,17 @@ def download_to(url: str, out_path: str, timeout: float = 60.0, resume: bool = T
                 total = int(tail) + start if tail.isdigit() else None
             elif r.headers.get("Content-Length", "").isdigit():
                 total = int(r.headers["Content-Length"]) + start
+            first_chunk = r.read(128 * 1024)
+            if _looks_like_proxy_error(url, r.headers.get("Content-Type"), first_chunk):
+                return False, "镜像返回 HTML 错误页（不是目标文件）"
             done = start
             mode = "ab" if start else "wb"
             with open(part, mode) as f:
+                if first_chunk:
+                    f.write(first_chunk)
+                    done += len(first_chunk)
+                    if sys.stdout.isatty():
+                        _progress(done, total)
                 while True:
                     chunk = r.read(128 * 1024)
                     if not chunk:

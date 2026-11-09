@@ -121,7 +121,7 @@ ghfast pip --apply --mirror tuna     # tuna | aliyun | ustc | tencent
 - jsDelivr：`raw.githubusercontent.com/u/r/ref/path` → `cdn.jsdelivr.net/gh/u/r@ref/path`（四个 CDN 域名轮换）
 - raw 域名替换：`raw.gitmirror.com/...`
 
-下载时把一个 URL 展开成 N 条候选，并发各取前 1 KB 竞速，选最快的流式下载，失败自动换下一条并支持断点续传。
+下载时把一个 URL 展开成 N 条候选，并发各取前 1 KB 竞速，选最快的流式下载，失败自动换下一条并支持断点续传。另外公共镜像经常把错误页以 **200 + `text/html`** 返回，所以下载前会校验 content-type 与正文首字节——否则你下到的「README」可能是一张 404 页面（这个坑是实测踩出来的）。
 
 **第三层：工具链。** git 用 `url.<mirror>.insteadOf` 做地址重写（副作用是 push 也走镜像，所以默认只打印不写入，写入后可 `--unset` 精确回滚，规则记在 `~/.config/ghfast/state.json`）；pip 写 `pip.conf` / `pip.ini`。
 
@@ -133,7 +133,7 @@ course-teaching/
 ├── install.sh / install.ps1   # 两种系统的安装入口
 ├── build.py                   # 打包 dist/ghfast.pyz
 ├── launchers/                 # 免安装直接运行的启动器
-├── tests/test_ghfast.py       # 24 个单元测试，含本地 HTTP 下载链路
+├── tests/test_ghfast.py       # 29 个单元测试，含本地 HTTP 下载链路
 ├── vendor/                    # 依赖目录（空的，因为不需要依赖）
 └── .github/workflows/ci.yml   # 3 系统 × 3 Python 版本矩阵
 ```

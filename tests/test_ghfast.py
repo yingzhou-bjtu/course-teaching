@@ -156,6 +156,8 @@ class _QuietHandler(http.server.SimpleHTTPRequestHandler):
         pass
 
     def do_GET(self):
+        if self.path.startswith("/err.bin"):
+            return self._html_error()
         # 故意不支持 Range，用来验证「服务端不支持续传」的降级路径
         if self.headers.get("Range"):
             self.send_response(200)
@@ -170,6 +172,20 @@ class _QuietHandler(http.server.SimpleHTTPRequestHandler):
     def _payload(self):
         with open(os.path.join(self.directory, "blob.bin"), "rb") as f:
             return f.read()
+
+    def do_HEAD(self):
+        if self.path.startswith("/err.bin"):
+            return self._html_error()
+        super().do_HEAD()
+
+    def _html_error(self):
+        body = b"<!DOCTYPE html><html><body>proxy error</body></html>"
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        if self.command != "HEAD":
+            self.wfile.write(body)
 
 
 class TestDownload(unittest.TestCase):
@@ -209,6 +225,16 @@ class TestDownload(unittest.TestCase):
             self.assertEqual(ghfast.sha256_file(out),
                              hashlib.sha256(self.payload).hexdigest())
 
+    def test_proxy_html_error_page_is_skipped(self):
+        url = self.url.replace("/blob.bin", "/err.bin")
+        self.assertIsNone(ghfast.probe_download(url, timeout=5))
+        with tempfile.TemporaryDirectory() as out_dir:
+            out = os.path.join(out_dir, "x.bin")
+            okk, msg = ghfast.download_to(url, out, timeout=5)
+            self.assertFalse(okk)
+            self.assertIn("HTML", msg)
+            self.assertFalse(os.path.exists(out))
+
     def test_download_resume_falls_back_when_server_ignores_range(self):
         with tempfile.TemporaryDirectory() as out_dir:
             out = os.path.join(out_dir, "blob.bin")
@@ -219,6 +245,28 @@ class TestDownload(unittest.TestCase):
             with open(out, "rb") as f:
                 self.assertEqual(f.read(), self.payload)
 
+
+class TestProxyErrorGuard(unittest.TestCase):
+    """镜像会把错误页以 200 + text/html 返回，必须识别出来换下一个来源。"""
+
+    def test_detects_html_error_page(self):
+        body = b"<!DOCTYPE html><html><body>404</body></html>"
+        self.assertTrue(ghfast._looks_like_proxy_error(
+            "https://raw.githubusercontent.com/u/r/main/README.md", "text/html", body))
+
+    def test_real_html_files_are_not_rejected(self):
+        body = b"<!DOCTYPE html><html></html>"
+        self.assertFalse(ghfast._looks_like_proxy_error(
+            "https://raw.githubusercontent.com/u/r/main/index.html", "text/html", body))
+
+    def test_plain_text_is_not_rejected(self):
+        self.assertFalse(ghfast._looks_like_proxy_error(
+            "https://raw.githubusercontent.com/u/r/main/README.md", "text/plain", b"# hello"))
+
+    def test_binary_is_not_rejected(self):
+        self.assertFalse(ghfast._looks_like_proxy_error(
+            "https://github.com/u/r/releases/download/v1/x.whl", "application/octet-stream",
+            b"PK\x03\x04"))
 
 class TestCli(unittest.TestCase):
     def test_all_subcommands_have_handlers(self):
