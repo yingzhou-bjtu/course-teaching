@@ -16,6 +16,13 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 NB = os.path.join(HERE, "猫狗识别.ipynb")
 
+# Windows 控制台默认不是 UTF-8，中文会直接抛 UnicodeEncodeError，先切一次。
+for stream in (sys.stdout, sys.stderr):
+    try:
+        stream.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 HELP = """这台电脑上没有找到 numpy，课程跑不起来。
 numpy 是唯一必需的库，按你的情况选一条命令执行：
 
