@@ -133,7 +133,7 @@ course-teaching/
 ├── install.sh / install.ps1   # 两种系统的安装入口
 ├── build.py                   # 打包 dist/ghfast.pyz
 ├── launchers/                 # 免安装直接运行的启动器
-├── tests/test_ghfast.py       # 29 个单元测试，含本地 HTTP 下载链路
+├── tests/test_ghfast.py       # 30 个单元测试，含本地 HTTP 下载链路
 ├── vendor/                    # 依赖目录（空的，因为不需要依赖）
 └── .github/workflows/ci.yml   # 3 系统 × 3 Python 版本矩阵
 ```

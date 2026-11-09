@@ -56,7 +56,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 UA = "ghfast/%s (+python-stdlib)" % VERSION
 
 HOSTS_BEGIN = "# >>> ghfast managed block >>>"
@@ -1032,9 +1032,13 @@ def cmd_clone(args: argparse.Namespace) -> int:
     cands.append(url)
     cands = _dedup(cands)
 
-    extra = list(args.git_args or [])
+    extra: List[str] = list(args.git_args or [])
     if args.depth:
         extra += ["--depth", str(args.depth)]
+    if args.branch:
+        extra += ["--branch", args.branch]
+    if args.jobs:
+        extra += ["--jobs", str(args.jobs)]
     if args.recursive:
         extra.append("--recursive")
 
@@ -1257,9 +1261,12 @@ def build_parser() -> argparse.ArgumentParser:
     cl.add_argument("url")
     cl.add_argument("-d", "--dest", help="目标目录")
     cl.add_argument("--depth", type=int, help="浅克隆层数")
+    cl.add_argument("-b", "--branch", help="只克隆指定分支")
+    cl.add_argument("-j", "--jobs", type=int, help="子模块并发数")
     cl.add_argument("--recursive", action="store_true", help="递归子模块")
-    cl.add_argument("rest", nargs=argparse.REMAINDER, help="透传给 git clone 的参数")
-    cl.set_defaults(func=cmd_clone, git_args=None)
+    cl.add_argument("--git-arg", dest="git_args", action="append", metavar="ARG",
+                    help="透传给 git clone 的额外参数，可重复，例如 --git-arg=--filter=blob:none")
+    cl.set_defaults(func=cmd_clone)
 
     g = sub.add_parser("git", parents=[common], help="配置/撤销 git 全局镜像")
     g.add_argument("--apply", action="store_true", help="写入 git 全局配置")
@@ -1289,8 +1296,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if not getattr(args, "func", None):
         parser.print_help()
         return 0
-    if getattr(args, "cmd", "") == "clone":
-        args.git_args = [a for a in (args.rest or []) if a != "--"]
     try:
         return int(args.func(args) or 0)
     except KeyboardInterrupt:

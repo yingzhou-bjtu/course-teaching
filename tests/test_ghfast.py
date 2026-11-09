@@ -282,6 +282,19 @@ class TestCli(unittest.TestCase):
         self.assertEqual(parser.parse_args(["mirrors", "--timeout", "4"]).timeout, 4.0)
         self.assertEqual(parser.parse_args(["mirrors"]).workers, 10)
 
+    def test_clone_options_are_not_leaked_to_git(self):
+        # 回归测试：曾经用 REMAINDER 收集透传参数，导致 -d/--dest 被当成 git 的开关
+        ns = ghfast.build_parser().parse_args(
+            ["clone", "https://github.com/a/b", "-d", "/tmp/x", "--depth", "1",
+             "-b", "dev", "-j", "2", "--recursive", "--git-arg=--filter=blob:none"])
+        self.assertEqual(ns.dest, "/tmp/x")
+        self.assertEqual(ns.depth, 1)
+        self.assertEqual(ns.branch, "dev")
+        self.assertEqual(ns.jobs, 2)
+        self.assertTrue(ns.recursive)
+        self.assertEqual(ns.git_args, ["--filter=blob:none"])
+        self.assertFalse(hasattr(ns, "rest"))
+
     def test_hosts_defaults(self):
         ns = ghfast.build_parser().parse_args(["hosts"])
         self.assertFalse(ns.apply)
