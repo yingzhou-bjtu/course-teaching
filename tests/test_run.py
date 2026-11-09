@@ -8,6 +8,7 @@ import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RUN = os.path.join(ROOT, "run.py")
+RUN_LITE = os.path.join(ROOT, "run_lite.py")
 
 
 def run_fast(cwd):
@@ -29,6 +30,17 @@ class RunScript(unittest.TestCase):
         message = (proc.stdout or "") + (proc.stderr or "")
         self.assertEqual(proc.returncode, 0, message)
         self.assertIn("运行结束", proc.stdout or "")
+
+    def test_lite_version_runs_with_stdlib_only(self):
+        proc = subprocess.run(
+            [sys.executable, RUN_LITE, "--fast"], cwd=ROOT,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            timeout=300, encoding="utf-8", errors="replace",
+        )
+        message = (proc.stdout or "") + (proc.stderr or "")
+        self.assertEqual(proc.returncode, 0, message)
+        self.assertIn("运行结束", proc.stdout or "")
+        self.assertNotIn("numpy", (proc.stderr or "").lower())
 
     def test_missing_notebook_message(self):
         # 在别的目录执行时，入口应自己定位 notebook，不抛异常

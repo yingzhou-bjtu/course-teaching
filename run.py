@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""不用 Jupyter，直接运行 猫狗识别.ipynb。
+"""课程入口：不用 Jupyter 也能跑。
 
-    python3 run.py          # 正常跑，十几秒
+    python3 run.py          # 完整课程，十余秒
     python3 run.py --fast   # 两秒跑完，用来确认环境
 
-只依赖 numpy。缺 numpy 时会打印安装办法，不会报一屏看不懂的错误。
+装了 numpy 就跑完整课程；没装则自动改用纯 Python 精简版（run_lite.py），
+一个第三方库都不需要。
 """
 
 import io
@@ -23,37 +24,8 @@ for stream in (sys.stdout, sys.stderr):
     except Exception:
         pass
 
-HELP = """这台电脑上没有找到 numpy，课程跑不起来。
-numpy 是唯一必需的库，按你的情况选一条命令执行：
 
-（1）电脑能上外网，用国内镜像安装，通常几十秒
-    python3 -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple numpy
-
-（2）已经有 vendor 目录（里面是 .whl 文件），不用联网
-    python3 -m pip install --no-index --find-links vendor numpy
-
-（3）服务器完全不能联网，也没有 vendor 目录
-    先在一台能上网的电脑上执行下面这条，把生成的 vendor 目录拷到服务器
-    python3 -m pip download numpy -d vendor --only-binary=:all: -i https://pypi.tuna.tsinghua.edu.cn/simple
-    然后在服务器上执行第（2）条。
-
-装完用这条命令确认：
-    python3 -c "import numpy; print(numpy.__version__)"
-"""
-
-
-def main():
-    fast = "--fast" in sys.argv[1:]
-    try:
-        import numpy  # noqa: F401
-    except ImportError:
-        print(HELP)
-        return 2
-
-    if not os.path.exists(NB):
-        print("找不到 猫狗识别.ipynb，请确认当前目录是解压后的文件夹。")
-        return 2
-
+def run_notebook(fast):
     with io.open(NB, encoding="utf-8") as f:
         notebook = json.load(f)
     cells = ["".join(c["source"]) for c in notebook["cells"] if c["cell_type"] == "code"]
@@ -65,19 +37,34 @@ def main():
         source = source.replace("FAST_DEMO = False", "FAST_DEMO = True")
 
     print("=" * 60)
-    print("猫狗识别课程，直接运行（不需要 Jupyter）")
+    print("猫狗识别 · 完整课程（无需 Jupyter）")
     print("=" * 60)
     namespace = {"__name__": "__main__"}
     exec(compile(source, NB, "exec"), namespace)
-
     acc = namespace.get("val_acc")
     print("=" * 60)
-    if acc is not None:
-        print("运行结束，验证集准确率 %.4f" % acc)
-    else:
-        print("运行结束")
+    print("运行结束，验证集准确率 %.4f" % acc if acc is not None else "运行结束")
     print("=" * 60)
     return 0
+
+
+def main():
+    fast = "--fast" in sys.argv[1:]
+    try:
+        import numpy  # noqa: F401
+    except ImportError:
+        print("没有安装 numpy，改用纯 Python 精简版，不需要安装任何东西。")
+        print("想跑完整课程，装一次即可：")
+        print("  python3 -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple numpy")
+        print()
+        sys.argv = [sys.argv[0], "--fast"] if fast else [sys.argv[0]]
+        import run_lite
+        return run_lite.main()
+
+    if not os.path.exists(NB):
+        print("找不到 猫狗识别.ipynb，请确认当前目录是解压后的文件夹。")
+        return 2
+    return run_notebook(fast)
 
 
 if __name__ == "__main__":

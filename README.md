@@ -2,13 +2,14 @@
 
 仓库包含两部分：一份讲原理的教学 notebook，一个网络不通时可用的小工具。
 
-第一次使用请直接看 [开始使用.md](开始使用.md)，那篇只讲三步：确认 Python 3、安装 numpy、运行 `python3 run.py`。不需要 GitHub 账号，不需要下载数据，也不需要 Jupyter。
+第一次使用请直接看 [开始使用.md](开始使用.md)：只有一个命令 `python3 run.py`。不需要 GitHub 账号，不需要下载数据，也不需要 Jupyter。没装 numpy 时程序自动改用纯 Python 精简版。
 
 | 路径 | 内容 | 依赖 |
 |---|---|---|
 | [`开始使用.md`](开始使用.md) | 新手入口，三步跑起来，含国内源与离线安装办法 | 无 |
 | [`猫狗识别.ipynb`](猫狗识别.ipynb) | 主线课程，用 NumPy 从零实现卷积网络做猫狗分类 | 仅 `numpy` |
-| [`run.py`](run.py) | 不用 Jupyter 的运行入口，缺 numpy 时给出安装提示 | 仅 `numpy` |
+| [`run.py`](run.py) | 不用 Jupyter 的运行入口，缺 numpy 时自动切精简版 | 无 |
+| [`run_lite.py`](run_lite.py) | 纯 Python 精简版，零第三方依赖 | 无 |
 | [`ghfast/`](ghfast/) | 不开 VPN 访问 GitHub 的工具，下载依赖时使用 | 仅 Python 标准库 |
 | [`tests/`](tests/) | 自动化测试，含 notebook 的端到端执行 | `numpy` |
 
@@ -20,7 +21,7 @@
 
 | | 本课程 | 框架方案 |
 |---|---|---|
-| 依赖 | NumPy | 框架轮子数百 MB |
+| 依赖 | NumPy；无 NumPy 时自动用纯 Python 精简版 | 框架轮子数百 MB |
 | 首次运行 | 无需下载数据 | 需要数据集与依赖 |
 | 训练耗时 | CPU 十余秒 | 通常需要 GPU |
 | 教学重点 | 计算过程 | 端到端流程 |
@@ -55,6 +56,8 @@ python3 run.py          # 正常跑，十余秒
 python3 run.py --fast   # 两秒跑完，用于确认环境
 ```
 
+没有 numpy 也能跑，程序会自动改用 `run_lite.py`：16x16 灰度图、六百多个参数的同类网络，一秒内结束。
+
 numpy 的安装优先用国内镜像，命令见 [开始使用.md](开始使用.md)。服务器不能联网时，在一台能上网的机器上执行 `pip download numpy -d vendor`，把 `vendor` 目录拷过去，再用 `pip install --no-index --find-links vendor numpy` 安装。
 
 默认配置为每类一千张样本、四个 epoch，普通笔记本 CPU 上十余秒即可跑完；把第一个单元格的 `FAST_DEMO` 改为 `True` 可压到两秒以内，用于确认环境。
@@ -86,6 +89,7 @@ course-teaching/
 ├── 开始使用.md               # 新手入口
 ├── 猫狗识别.ipynb            # 主线课程
 ├── run.py                    # 不用 Jupyter 的运行入口
+├── run_lite.py               # 纯 Python 精简版，零依赖
 ├── requirements.txt          # numpy（matplotlib、pillow 可选）
 ├── vendor/                   # 离线 wheel 存放处（默认空）
 ├── ghfast/                   # GitHub 加速工具
