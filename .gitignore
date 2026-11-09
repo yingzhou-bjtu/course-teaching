@@ -5,6 +5,8 @@ dist/
 .venv/
 venv/
 *.part
+data/
+.ipynb_checkpoints/
 .DS_Store
 Thumbs.db
 .idea/

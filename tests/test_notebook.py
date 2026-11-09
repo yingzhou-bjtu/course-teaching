@@ -1,0 +1,75 @@
+# -*- coding: utf-8 -*-
+"""把《猫狗识别.ipynb》真的执行一遍（FAST 模式），保证课程不会腐烂。
+
+    python -m unittest tests.test_notebook -v
+
+不依赖 Jupyter：直接抽出所有 code cell，替换 FAST_DEMO 开关后 exec。
+"""
+
+import contextlib
+import io
+import json
+import os
+import unittest
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+NB = os.path.join(ROOT, "猫狗识别.ipynb")
+
+
+class NotebookRun(unittest.TestCase):
+    ns = {}
+    out = ""
+
+    @classmethod
+    def setUpClass(cls):
+        try:
+            import numpy  # noqa: F401
+        except ImportError:
+            raise unittest.SkipTest("需要 numpy：pip install numpy")
+        if not os.path.exists(NB):
+            raise unittest.SkipTest("找不到 notebook：" + NB)
+
+        with open(NB, encoding="utf-8") as f:
+            nb = json.load(f)
+        cells = ["".join(c["source"]) for c in nb["cells"] if c["cell_type"] == "code"]
+        src = "\n\n".join(cells)
+        if "FAST_DEMO = False" not in src:
+            raise AssertionError("notebook 里找不到 FAST_DEMO 开关，测试无法降规模")
+        src = src.replace("FAST_DEMO = False", "FAST_DEMO = True")
+
+        cls.ns = {"__name__": "__main__"}
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            exec(compile(src, NB, "exec"), cls.ns)
+        cls.out = buf.getvalue()
+
+        try:
+            import matplotlib.pyplot as plt
+
+            plt.close("all")
+        except Exception:
+            pass
+
+    def test_notebook_runs_end_to_end(self):
+        self.assertIn("总训练时间", self.out)
+        self.assertIn("混淆矩阵", self.out)
+
+    def test_accuracy_above_chance(self):
+        # 合成数据 + 1 个 epoch，应该明显高于 0.5 的瞎猜水平
+        self.assertGreater(self.ns["val_acc"], 0.6)
+
+    def test_shapes(self):
+        self.assertEqual(self.ns["Xtr"].shape[1:], (3, 32, 32))
+        self.assertEqual(self.ns["Xva"].shape[1:], (3, 32, 32))
+        logits = self.ns["model"].forward(self.ns["Xtr"][:2])
+        self.assertEqual(logits.shape, (2, 2))
+
+    def test_gradient_check_passes(self):
+        self.assertIn("通过", self.out)
+
+    def test_fast_mode_never_downloads(self):
+        self.assertNotIn("下载 CIFAR-10", self.out)
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)

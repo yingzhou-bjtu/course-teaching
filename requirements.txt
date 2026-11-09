@@ -1,0 +1,14 @@
+# 运行依赖
+#
+# 核心只需要 numpy：
+#   pip install numpy
+#
+# matplotlib 和 pillow 是可选的（不装也能跑，只是没有图和不能读自己的照片）：
+#   pip install matplotlib pillow
+#
+# 中国网络建议先配镜像：
+#   pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
+
+numpy>=1.21
+matplotlib>=3.5
+pillow>=9.0

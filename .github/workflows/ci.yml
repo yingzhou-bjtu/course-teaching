@@ -23,18 +23,22 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      - name: 单元测试（含本地 HTTP 下载链路）
+      - name: 安装依赖（课程只需要 numpy；matplotlib 用于画图路径）
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy matplotlib
+
+      - name: 单元测试（ghfast 30 项 + notebook 端到端）
         run: python -m unittest discover -s tests -v
 
-      - name: 离线自检
-        run: python ghfast.py selftest
+      - name: notebook 自检（真的把课程跑一遍）
+        run: python -m unittest tests.test_notebook -v
+
+      - name: ghfast 离线自检
+        run: python ghfast/ghfast.py selftest
 
       - name: 打包单文件 zipapp
-        run: python build.py
+        run: python ghfast/build.py
 
       - name: 验证 zipapp 可执行
-        run: python dist/ghfast.pyz --version
-
-      - name: 验证 hosts 预览（不写系统文件）
-        run: python ghfast.py hosts --timeout 3
-        continue-on-error: true
+        run: python ghfast/dist/ghfast.pyz --version

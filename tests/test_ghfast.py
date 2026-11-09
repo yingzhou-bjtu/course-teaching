@@ -15,7 +15,7 @@ import threading
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC = os.path.join(ROOT, "ghfast.py")
+SRC = os.path.join(ROOT, "ghfast", "ghfast.py")
 
 
 def _load_ghfast():
