@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / py${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.8", "3.10", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: 单元测试（含本地 HTTP 下载链路）
+        run: python -m unittest discover -s tests -v
+
+      - name: 离线自检
+        run: python ghfast.py selftest
+
+      - name: 打包单文件 zipapp
+        run: python build.py
+
+      - name: 验证 zipapp 可执行
+        run: python dist/ghfast.pyz --version
+
+      - name: 验证 hosts 预览（不写系统文件）
+        run: python ghfast.py hosts --timeout 3
+        continue-on-error: true

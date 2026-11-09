@@ -1,0 +1,4 @@
+#!/bin/sh
+# 不安装、直接在仓库里运行（macOS / Linux / WSL）：
+#   ./launchers/ghfast doctor
+exec python3 "$(dirname "$0")/../ghfast.py" "$@"
