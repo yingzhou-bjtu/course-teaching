@@ -98,6 +98,16 @@ python3 run.py --fast
 
 一秒多结束，准确率八成左右，因为只训练一个 epoch。
 
+### 为什么每轮训练要四十秒
+
+pip 装的 numpy 默认会开满 BLAS 线程。这门课的矩阵都很小（几十乘几十），线程调度开销比计算本身还大，32 线程时每轮四十多秒，单线程反而三秒。
+
+`run.py` 和 notebook 的第一格都在导入 numpy 之前设了 `OPENBLAS_NUM_THREADS=1`，正常情况下你不需要管。如果你在别的环境里自己调这个模型、觉得慢，先试试：
+
+```
+OPENBLAS_NUM_THREADS=1 python3 your_script.py
+```
+
 ## 常见问题
 
 **提示 `python3: command not found` 或 `不是内部或外部命令`**

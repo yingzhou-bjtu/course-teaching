@@ -79,6 +79,10 @@ class NotebookRun(unittest.TestCase):
         self.assertIn("data/sample（从磁盘读取）", self.out)
         self.assertEqual(self.ns["X_snap"].shape[1:], (3, 96, 96))
 
+    def test_blas_threads_capped(self):
+        # 小矩阵多线程会慢几十倍，notebook 必须在 import numpy 之前把线程数压到 1
+        self.assertEqual(self.ns["os"].environ.get("OPENBLAS_NUM_THREADS"), "1")
+
     def test_figures_written(self):
         try:
             import matplotlib  # noqa: F401

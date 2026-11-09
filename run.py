@@ -17,6 +17,12 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 NB = os.path.join(HERE, "猫狗识别.ipynb")
 
+# 这门课的矩阵乘法都很小（一次几十乘几十），多线程反而被调度开销拖慢：
+# 32 线程时每轮 40 秒，单线程 3 秒。必须在 numpy 被导入之前设置，所以放在这里。
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+
 # Windows 控制台默认不是 UTF-8，中文会直接抛 UnicodeEncodeError，先切一次。
 for stream in (sys.stdout, sys.stderr):
     try:
