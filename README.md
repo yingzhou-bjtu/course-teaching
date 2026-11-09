@@ -2,9 +2,13 @@
 
 仓库包含两部分：一份讲原理的教学 notebook，一个网络不通时可用的小工具。
 
+第一次使用请直接看 [开始使用.md](开始使用.md)，那篇只讲三步：确认 Python 3、安装 numpy、运行 `python3 run.py`。不需要 GitHub 账号，不需要下载数据，也不需要 Jupyter。
+
 | 路径 | 内容 | 依赖 |
 |---|---|---|
+| [`开始使用.md`](开始使用.md) | 新手入口，三步跑起来，含国内源与离线安装办法 | 无 |
 | [`猫狗识别.ipynb`](猫狗识别.ipynb) | 主线课程，用 NumPy 从零实现卷积网络做猫狗分类 | 仅 `numpy` |
+| [`run.py`](run.py) | 不用 Jupyter 的运行入口，缺 numpy 时给出安装提示 | 仅 `numpy` |
 | [`ghfast/`](ghfast/) | 不开 VPN 访问 GitHub 的工具，下载依赖时使用 | 仅 Python 标准库 |
 | [`tests/`](tests/) | 自动化测试，含 notebook 的端到端执行 | `numpy` |
 
@@ -44,11 +48,14 @@ pip install matplotlib         # 可选，用于绘制训练曲线
 jupyter notebook 猫狗识别.ipynb
 ```
 
-没有 Jupyter 时可先跑自检，它会完整执行一遍课程代码：
+没有 Jupyter 时用同一个文件夹里的 `run.py`，它会把课程代码完整执行一遍：
 
 ```bash
-python -m unittest tests.test_notebook -v
+python3 run.py          # 正常跑，十余秒
+python3 run.py --fast   # 两秒跑完，用于确认环境
 ```
+
+numpy 的安装优先用国内镜像，命令见 [开始使用.md](开始使用.md)。服务器不能联网时，在一台能上网的机器上执行 `pip download numpy -d vendor`，把 `vendor` 目录拷过去，再用 `pip install --no-index --find-links vendor numpy` 安装。
 
 默认配置为每类一千张样本、四个 epoch，普通笔记本 CPU 上十余秒即可跑完；把第一个单元格的 `FAST_DEMO` 改为 `True` 可压到两秒以内，用于确认环境。
 
@@ -76,8 +83,11 @@ python ghfast/ghfast.py download <url> -O out.bin
 
 ```
 course-teaching/
+├── 开始使用.md               # 新手入口
 ├── 猫狗识别.ipynb            # 主线课程
+├── run.py                    # 不用 Jupyter 的运行入口
 ├── requirements.txt          # numpy（matplotlib、pillow 可选）
+├── vendor/                   # 离线 wheel 存放处（默认空）
 ├── ghfast/                   # GitHub 加速工具
 │   ├── ghfast.py
 │   ├── build.py              # 打包 dist/ghfast.pyz

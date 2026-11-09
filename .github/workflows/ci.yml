@@ -28,7 +28,10 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install numpy matplotlib
 
-      - name: 单元测试（ghfast 30 项 + notebook 端到端）
+      - name: 直接运行课程（不用 Jupyter 的入口）
+        run: python run.py --fast
+
+      - name: 单元测试（ghfast 30 项 + notebook 端到端 + run.py）
         run: python -m unittest discover -s tests -v
 
       - name: notebook 自检（真的把课程跑一遍）
