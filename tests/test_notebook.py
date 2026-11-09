@@ -3,7 +3,7 @@
 
     python -m unittest tests.test_notebook -v
 
-不依赖 Jupyter：直接抽出所有 code cell，替换 FAST_DEMO 开关后 exec。
+不依赖 Jupyter：抽出全部 code cell，替换 FAST_DEMO 开关后直接 exec。
 """
 
 import contextlib
@@ -19,6 +19,7 @@ NB = os.path.join(ROOT, "猫狗识别.ipynb")
 class NotebookRun(unittest.TestCase):
     ns = {}
     out = ""
+    source = ""
 
     @classmethod
     def setUpClass(cls):
@@ -35,6 +36,7 @@ class NotebookRun(unittest.TestCase):
         src = "\n\n".join(cells)
         if "FAST_DEMO = False" not in src:
             raise AssertionError("notebook 里找不到 FAST_DEMO 开关，测试无法降规模")
+        cls.source = src
         src = src.replace("FAST_DEMO = False", "FAST_DEMO = True")
 
         cls.ns = {"__name__": "__main__"}
@@ -55,7 +57,7 @@ class NotebookRun(unittest.TestCase):
         self.assertIn("混淆矩阵", self.out)
 
     def test_accuracy_above_chance(self):
-        # 合成数据 + 1 个 epoch，应该明显高于 0.5 的瞎猜水平
+        # 合成数据 1 个 epoch，应明显高于 0.5 的随机水平
         self.assertGreater(self.ns["val_acc"], 0.6)
 
     def test_shapes(self):
@@ -65,10 +67,14 @@ class NotebookRun(unittest.TestCase):
         self.assertEqual(logits.shape, (2, 2))
 
     def test_gradient_check_passes(self):
-        self.assertIn("通过", self.out)
+        self.assertIn("最大相对误差", self.out)
+        self.assertIn("误差与解析梯度同量级", self.out)
 
-    def test_fast_mode_never_downloads(self):
-        self.assertNotIn("下载 CIFAR-10", self.out)
+    def test_offline_and_dependency_light(self):
+        # 课程承诺：不下载数据、不联网
+        self.assertNotIn("http://", self.source)
+        self.assertNotIn("https://", self.source)
+        self.assertNotIn("下载", self.out)
 
 
 if __name__ == "__main__":
